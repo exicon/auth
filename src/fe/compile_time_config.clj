@@ -1,4 +1,5 @@
-(ns compile-time-config)
+(ns compile-time-config
+  (:require [environ.core]))
 
-(defmacro backend-url []
-  "http://localhost:9001")
+(defmacro env [key]
+  (environ.core/env key))

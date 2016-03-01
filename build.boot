@@ -87,6 +87,7 @@
          (comp
            (from-cljsjs :profile :development)
            (watch)
+           (environ :env {:backend-url "http://localhost:9001"})
            (speak)
            (hoplon :pretty-print true)
            (reload)

@@ -1,0 +1,4 @@
+{:auth0-url           "https://<tenant>.auth0.com"
+ :auth0-redirect-uri  "http://localhost:9000"
+ :auth0-client-id     "W6q8asdfadsaferGdFGgERG34tERGdfg"
+ :auth0-client-secret "mnmv-alskjdfglskfdjglfkjlkjhgdfgdfhgfhghfdghfggvrloZ-ruVBfs-oxkw"}

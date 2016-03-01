@@ -2,14 +2,25 @@
   (:require-macros
     [hoplon.core :refer [with-init!]]
     [javelin.core :refer [defc defc= cell=]]
-    [compile-time-config :refer [backend-url]])
+    [compile-time-config :refer [env]])
   (:require
     [hoplon.core :include-macros true]
     [javelin.core :refer [cell]]
     [castra.core :refer [mkremote]]))
 
+(defn auth0-login-url [config]
+  (when-let [{:keys [auth0-url auth0-client-id auth0-redirect-uri]} config]
+    (str auth0-url "/authorize/?"
+         "response_type=token&client_id=" auth0-client-id
+         "&redirect_uri=" auth0-redirect-uri
+         "&state="
+         "&scope=openid profile")))
+
 (defn content []
   (spliced
     (h1 "Auth index page")
-    (a :href (str (backend-url) "/login")
+    (a :href (auth0-login-url
+               {:auth0-url (env :auth0-url)
+                :auth0-client-id (env :auth0-client-id)
+                :auth0-redirect-uri (env :auth0-redirect-uri)})
        "Login")))
