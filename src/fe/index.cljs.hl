@@ -1,6 +1,13 @@
-(page "index.html")
+(page "index.html"
+      (:require
+        [auth.screen]
+
+        [devtools.core :as devtools]))
+
+(with-init!
+  (devtools/install!))
 
 (html
   (head)
   (body
-    (h1 "Auth index page")))
+    (main (cell= (auth.screen/content)))))

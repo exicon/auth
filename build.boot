@@ -85,11 +85,11 @@
          []
          (set-env! :source-paths #{"src/fe/"})
          (comp
-           (serve :port 9000)
            (from-cljsjs :profile :development)
            (watch)
+           (speak)
            (hoplon :pretty-print true)
            (reload)
            (cljs :optimizations :none
                  :source-map true)
-           (speak)))
+           (serve :port 9000)))

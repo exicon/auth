@@ -1,0 +1,15 @@
+(ns auth.screen
+  (:require-macros
+    [hoplon.core :refer [with-init!]]
+    [javelin.core :refer [defc defc= cell=]]
+    [compile-time-config :refer [backend-url]])
+  (:require
+    [hoplon.core :include-macros true]
+    [javelin.core :refer [cell]]
+    [castra.core :refer [mkremote]]))
+
+(defn content []
+  (spliced
+    (h1 "Auth index page")
+    (a :href (str (backend-url) "/login")
+       "Login")))
