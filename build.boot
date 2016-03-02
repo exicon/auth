@@ -39,7 +39,8 @@
     [adzerk/boot-reload "0.4.5"]
     [cljsjs/boot-cljsjs "0.5.1"]
     [hoplon/boot-hoplon "0.1.13"]
-    [hoplon "6.0.0-alpha13"]]
+    [hoplon "6.0.0-alpha13"]
+    [cljsjs/auth0-lock "8.1.5-0"]]
   :source-paths #{"src/be"}
   :resource-paths #{"assets"})
 

@@ -4,23 +4,101 @@
     [javelin.core :refer [defc defc= cell=]]
     [compile-time-config :refer [env]])
   (:require
-    [hoplon.core :include-macros true]
+    [hoplon.core :refer :all]
     [javelin.core :refer [cell]]
-    [castra.core :refer [mkremote]]))
+    [castra.core :refer [mkremote]]
+    [clojure.string :as str]
+    [cljsjs.auth0-lock]
+    [cljs.pprint :refer [pprint]]))
+
+(defn pp-str [x] (with-out-str (pprint x)))
+
+(def route (route-cell "#/"))
+
+(defn query-params [route]
+  (into {} (map #(update (str/split % #"=") 0 keyword)
+                (str/split (subs route 1) #"&"))))
+
+(defn payload [jwt]
+  (-> (str/split jwt ".")
+      second
+      js/atob
+      js/JSON.parse
+      (js->clj :keywordize-keys true)))
+
+
+(defn auth0-callback-params? [route]
+  (not (str/starts-with? route "#/")))
+
+(def jwt-payload
+  (cell= (when (auth0-callback-params? route)
+           (-> (query-params route)
+               :id_token
+               payload))))
+
+(def lock (js/Auth0Lock. (env :auth0-client-id)
+                         (subs (env :auth0-url) 8)))
+
+(defn parse-hash [lock hash]
+  (js->clj (.parseHash lock hash) :keywordize-keys true))
+
+(defn get-profile [lock hash profile-cell]
+  (let [id-token (:id_token (parse-hash lock hash))
+        store-profile (fn [err profile]
+                        (reset! profile-cell
+                                (js->clj profile)))]
+    (.getProfile lock id-token store-profile)))
+
+(def user-profile (cell {}))
+
+(defn get-user-profile [route]
+  (get-profile lock route user-profile))
+
+(cell= (when (auth0-callback-params? route)
+         (get-user-profile route)))
 
 (defn auth0-login-url [config]
   (when-let [{:keys [auth0-url auth0-client-id auth0-redirect-uri]} config]
-    (str auth0-url "/authorize/?"
-         "response_type=token&client_id=" auth0-client-id
+    (str auth0-url "/authorize/"
+         "?response_type=token"
+         "&client_id=" auth0-client-id
          "&redirect_uri=" auth0-redirect-uri
          "&state="
-         "&scope=openid profile")))
+         "&scope=openid")))
+
+(def auth0-callback-url-example
+  (str "http://localhost:9000/#"
+      "access_token=NtWQsC2c8udqlurh&"
+      "id_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9."
+      "eyJfaWQiOiI2MDFlMDk1N2I5MWM2MGZiMmU3NDVkZjZhMmIyMTc0NCIsImdpdmVuX25hbWUiOiJIZW5yeSIsImZhbWlseV9uYW1lIjoiTGl1IiwiZW1haWwiOiJoZW5yeUBleGljb24ubW9iaSIsImNsaWVudElEIjoiVzZxOFUxeGl0ckR6QzhLa29sVE5YQnkwWEhTVkRVV0ciLCJ1cGRhdGVkX2F0IjoiMjAxNi0wMy0wMVQwOToyMToxNS42ODlaIiwicGljdHVyZSI6Imh0dHBzOi8vcy5ncmF2YXRhci5jb20vYXZhdGFyL2U5MTM0YjMwMDUzM2FmZTgzMjY4MzE5MzFmYTUzYWI3P3M9NDgwJnI9cGcmZD1odHRwcyUzQSUyRiUyRmNkbi5hdXRoMC5jb20lMkZhdmF0YXJzJTJGaGwucG5nIiwidXNlcl9pZCI6ImF1dGgwfDUxNTE2ZDUxYTQ2NTg1N2IyZDAwMDFmNyIsIm5hbWUiOiJoZW5yeUBleGljb24ubW9iaSIsIm5pY2tuYW1lIjoiaGVucnkiLCJpZGVudGl0aWVzIjpbeyJ1c2VyX2lkIjoiNTE1MTZkNTFhNDY1ODU3YjJkMDAwMWY3IiwicHJvdmlkZXIiOiJhdXRoMCIsImNvbm5lY3Rpb24iOiJiYXQtbW9uZ29kYiIsImlzU29jaWFsIjpmYWxzZX1dLCJjcmVhdGVkX2F0IjoiMjAxNi0wMy0wMVQwMzoyODo0OC4wNDZaIiwiZ2xvYmFsX2NsaWVudF9pZCI6ImIzVGd3MTVqdHdJcnZnZldoVlp6QXg3TlVqaDFmM29wIiwiaXNzIjoiaHR0cHM6Ly9leGljb24tZGV2LmF1dGgwLmNvbS8iLCJzdWIiOiJhdXRoMHw1MTUxNmQ1MWE0NjU4NTdiMmQwMDAxZjciLCJhdWQiOiJXNnE4VTF4aXRyRHpDOEtrb2xUTlhCeTBYSFNWRFVXRyIsImV4cCI6MTQ1NjkxMDQ3NSwiaWF0IjoxNDU2ODI0MDc1fQ."
+      "7DT6qKeuGEhy7ZsFkWTGytgXToMw01mLQGF9DvMi3XA&"
+      "token_type=Bearer"))
+
+(defn show-auth0-lock []
+  (.show lock (clj->js
+                {:container "auth0-lock-container"})))
 
 (defn content []
   (spliced
     (h1 "Auth index page")
-    (a :href (auth0-login-url
-               {:auth0-url (env :auth0-url)
-                :auth0-client-id (env :auth0-client-id)
-                :auth0-redirect-uri (env :auth0-redirect-uri)})
-       "Login")))
+
+    (h3 "JWT payload decoded manually")
+    (pre (cell= (pp-str jwt-payload)))
+
+    (h3 "JWT decoded by Auth0 Lock")
+    (pre (cell= (pp-str (parse-hash lock route))))
+
+    (h3 "User profile requested from Auth0 API via Lock")
+    (pre (cell= (pp-str user-profile)))
+
+    (div (a :href (auth0-login-url
+                    {:auth0-url          (env :auth0-url)
+                     :auth0-client-id    (env :auth0-client-id)
+                     :auth0-redirect-uri (env :auth0-redirect-uri)})
+            "Login page hosted by Auth0"))
+
+    (div (button
+           :click show-auth0-lock
+           "Show Auth0 Lock login/signup dialog"))
+
+    (div :id "auth0-lock-container")))

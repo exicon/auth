@@ -7,9 +7,9 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/resources" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/dev-resources" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/src/be" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/fe" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/be" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
@@ -23,6 +23,7 @@
     <orderEntry type="library" name="Leiningen: cheshire:5.5.0" level="project" />
     <orderEntry type="library" name="Leiningen: clj-stacktrace:0.2.8" level="project" />
     <orderEntry type="library" name="Leiningen: clj-time:0.11.0" level="project" />
+    <orderEntry type="library" name="Leiningen: cljsjs/auth0-lock:8.1.5-0" level="project" />
     <orderEntry type="library" name="Leiningen: cljsjs/boot-cljsjs:0.5.1" level="project" />
     <orderEntry type="library" name="Leiningen: cljsjs/jquery:1.9.1-0" level="project" />
     <orderEntry type="library" name="Leiningen: clojure-complete:0.2.3" level="project" />
