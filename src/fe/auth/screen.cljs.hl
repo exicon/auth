@@ -5,6 +5,7 @@
     [compile-time-config :refer [env]])
   (:require
     [hoplon.core :refer :all]
+    [hoplon.storage-atom :refer [local-storage]]
     [javelin.core :refer [cell]]
     [castra.core :refer [mkremote]]
     [clojure.string :as str]
@@ -16,8 +17,8 @@
 
 (def route (route-cell "#/"))
 
-(defn auth0-callback? [route]
-  (not (str/starts-with? route "#/")))
+(def got-authorized?
+  (cell= (not (str/starts-with? route "#/"))))
 
 (def lock (js/Auth0Lock. (env :auth0-client-id)
                          (subs (env :auth0-url) 8)))
@@ -25,19 +26,33 @@
 (defn parse-hash [lock hash]
   (as-clj (.parseHash lock hash)))
 
-(defn get-profile [lock hash profile-cell]
-  (let [id-token (:id_token (parse-hash lock hash))
-        store-profile (fn [err profile]
+(def id-token (-> (cell nil) (local-storage 'id_token)))
+; FIXME To avoid escaping within formula cells we can have a function
+; which implicitly depends on the id-token cell
+(defn reset-id-token [v] (reset! id-token v))
+
+(def authorized? (cell= id-token))
+(def unauthorized? (cell= (not id-token)))
+
+; GotAuthorized phase
+(cell=
+  (when got-authorized?
+    (reset-id-token (-> (parse-hash lock route) :id_token))))
+
+(defn get-profile [lock id-token profile-cell]
+  (let [store-profile (fn [err profile]
                         (reset! profile-cell (as-clj profile)))]
     (.getProfile lock id-token store-profile)))
 
 (def user-profile (cell {}))
 
-(defn get-user-profile [route]
-  (get-profile lock route user-profile))
+(defn get-user-profile []
+  (get-profile lock @id-token user-profile))
 
-(cell= (when (auth0-callback? route)
-         (get-user-profile route)))
+; Authorized phase triggers getting the user profile
+(cell=
+  (when authorized?
+    (get-user-profile)))
 
 (defn auth0-login-url [config]
   (when-let [{:keys [auth0-url auth0-client-id auth0-redirect-uri]} config]
@@ -74,27 +89,41 @@
        (div :class "pure-u-1"
             (h1 "Auth index page")
 
-            (a :class "pure-button pure-button-active"
-               :href (auth0-login-url
-                       {:auth0-url          (env :auth0-url)
-                        :auth0-client-id    (env :auth0-client-id)
-                        :auth0-redirect-uri (env :auth0-redirect-uri)})
-               "Login page hosted by Auth0")
+            (div :toggle unauthorized?
+                 (a :class "pure-button pure-button-active"
+                    :href (auth0-login-url
+                            {:auth0-url          (env :auth0-url)
+                             :auth0-client-id    (env :auth0-client-id)
+                             :auth0-redirect-uri (env :auth0-redirect-uri)})
+                    "Login page hosted by Auth0")
 
-            (span :html "&nbsp;")
+                 (span :html "&nbsp;")
 
-            (button :class "pure-button pure-button-active"
-                    :click show-auth0-lock
-                    "Show Auth0 Lock login/signup dialog")
+                 (button :class "pure-button pure-button-active"
+                         :click show-auth0-lock
+                         "Show Auth0 Lock login/signup dialog")
 
-            (h2 "Current user")
-            (user-elem :profile user-profile)
+                 (span :html "&nbsp;"))
 
-            (h3 "JWT decoded by Auth0 Lock")
-            (pre (cell= (pp-str (parse-hash lock route))))
+            (button :class "pure-button"
+                    :toggle authorized?
+                    :click #(reset-id-token nil)
+                    "Log out")
 
-            (h3 "User profile requested from Auth0 API via Lock")
+            (div :toggle got-authorized?
+                 (button :class "pure-button"
+                         :click #(set! js/window.location.hash "#/")
+                         "Continue to the application"))
 
-            (pre (cell= (pp-str user-profile)))
+            (div :toggle authorized?
+                 (h2 "Current user")
+                 (user-elem :profile user-profile)
 
-            (div :id "auth0-lock-container"))))
+                 (h3 "JWT decoded by Auth0 Lock")
+                 (pre (cell= (pp-str (parse-hash lock route))))
+
+                 (h3 "User profile requested from Auth0 API via Lock")
+
+                 (pre (cell= (pp-str user-profile)))
+
+                 (div :id "auth0-lock-container")))))
