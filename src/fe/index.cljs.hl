@@ -17,6 +17,9 @@
     (link :rel "shortcut icon"
           :href "https://appboard.exiconglobal.com/images/favicon.ico")
     (link :rel "stylesheet" :href "/auth0-lock.css")
+    (link :rel "stylesheet" :href "/pure.css")
+    (style :type "text/css" "body {padding: 1em;}")
+
     (script ""))
   (body
     (main (cell= (auth.screen/content)))))

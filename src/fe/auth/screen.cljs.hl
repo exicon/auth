@@ -16,26 +16,8 @@
 
 (def route (route-cell "#/"))
 
-(defn query-params [route]
-  (into {} (map #(update (str/split % #"=") 0 keyword)
-                (str/split (subs route 1) #"&"))))
-
-(defn payload [jwt]
-  (-> (str/split jwt ".")
-      second
-      js/atob
-      js/JSON.parse
-      as-clj))
-
-
-(defn auth0-callback-params? [route]
+(defn auth0-callback? [route]
   (not (str/starts-with? route "#/")))
-
-(def jwt-payload
-  (cell= (when (auth0-callback-params? route)
-           (-> (query-params route)
-               :id_token
-               payload))))
 
 (def lock (js/Auth0Lock. (env :auth0-client-id)
                          (subs (env :auth0-url) 8)))
@@ -54,7 +36,7 @@
 (defn get-user-profile [route]
   (get-profile lock route user-profile))
 
-(cell= (when (auth0-callback-params? route)
+(cell= (when (auth0-callback? route)
          (get-user-profile route)))
 
 (defn auth0-login-url [config]
@@ -88,30 +70,31 @@
            (span email)))))
 
 (defn content []
-  (spliced
-    (h1 "Auth index page")
+  (div :class "pure-g"
+       (div :class "pure-u-1"
+            (h1 "Auth index page")
 
-    (h2 "Current user")
+            (a :class "pure-button pure-button-active"
+               :href (auth0-login-url
+                       {:auth0-url          (env :auth0-url)
+                        :auth0-client-id    (env :auth0-client-id)
+                        :auth0-redirect-uri (env :auth0-redirect-uri)})
+               "Login page hosted by Auth0")
 
-    (user-elem :profile user-profile)
+            (span :html "&nbsp;")
 
-    (h3 "JWT payload decoded manually")
-    (pre (cell= (pp-str jwt-payload)))
+            (button :class "pure-button pure-button-active"
+                    :click show-auth0-lock
+                    "Show Auth0 Lock login/signup dialog")
 
-    (h3 "JWT decoded by Auth0 Lock")
-    (pre (cell= (pp-str (parse-hash lock route))))
+            (h2 "Current user")
+            (user-elem :profile user-profile)
 
-    (h3 "User profile requested from Auth0 API via Lock")
-    (pre (cell= (pp-str user-profile)))
+            (h3 "JWT decoded by Auth0 Lock")
+            (pre (cell= (pp-str (parse-hash lock route))))
 
-    (div (a :href (auth0-login-url
-                    {:auth0-url          (env :auth0-url)
-                     :auth0-client-id    (env :auth0-client-id)
-                     :auth0-redirect-uri (env :auth0-redirect-uri)})
-            "Login page hosted by Auth0"))
+            (h3 "User profile requested from Auth0 API via Lock")
 
-    (div (button
-           :click show-auth0-lock
-           "Show Auth0 Lock login/signup dialog"))
+            (pre (cell= (pp-str user-profile)))
 
-    (div :id "auth0-lock-container")))
+            (div :id "auth0-lock-container"))))
