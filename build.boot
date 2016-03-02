@@ -42,7 +42,7 @@
     [hoplon "6.0.0-alpha13"]
     [cljsjs/auth0-lock "8.1.5-0"]]
   :source-paths #{"src/be"}
-  :resource-paths #{"assets"})
+  :resource-paths #{"resources"})
 
 ; =============== Backend ===============
 

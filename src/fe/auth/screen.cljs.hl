@@ -1,6 +1,6 @@
 (ns auth.screen
   (:require-macros
-    [hoplon.core :refer [with-init!]]
+    [hoplon.core :refer [with-init! defelem]]
     [javelin.core :refer [defc defc= cell=]]
     [compile-time-config :refer [env]])
   (:require
@@ -12,6 +12,7 @@
     [cljs.pprint :refer [pprint]]))
 
 (defn pp-str [x] (with-out-str (pprint x)))
+(defn as-clj [x] (js->clj x :keywordize-keys true))
 
 (def route (route-cell "#/"))
 
@@ -24,7 +25,7 @@
       second
       js/atob
       js/JSON.parse
-      (js->clj :keywordize-keys true)))
+      as-clj))
 
 
 (defn auth0-callback-params? [route]
@@ -40,13 +41,12 @@
                          (subs (env :auth0-url) 8)))
 
 (defn parse-hash [lock hash]
-  (js->clj (.parseHash lock hash) :keywordize-keys true))
+  (as-clj (.parseHash lock hash)))
 
 (defn get-profile [lock hash profile-cell]
   (let [id-token (:id_token (parse-hash lock hash))
         store-profile (fn [err profile]
-                        (reset! profile-cell
-                                (js->clj profile)))]
+                        (reset! profile-cell (as-clj profile)))]
     (.getProfile lock id-token store-profile)))
 
 (def user-profile (cell {}))
@@ -68,19 +68,32 @@
 
 (def auth0-callback-url-example
   (str "http://localhost:9000/#"
-      "access_token=NtWQsC2c8udqlurh&"
-      "id_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9."
-      "eyJfaWQiOiI2MDFlMDk1N2I5MWM2MGZiMmU3NDVkZjZhMmIyMTc0NCIsImdpdmVuX25hbWUiOiJIZW5yeSIsImZhbWlseV9uYW1lIjoiTGl1IiwiZW1haWwiOiJoZW5yeUBleGljb24ubW9iaSIsImNsaWVudElEIjoiVzZxOFUxeGl0ckR6QzhLa29sVE5YQnkwWEhTVkRVV0ciLCJ1cGRhdGVkX2F0IjoiMjAxNi0wMy0wMVQwOToyMToxNS42ODlaIiwicGljdHVyZSI6Imh0dHBzOi8vcy5ncmF2YXRhci5jb20vYXZhdGFyL2U5MTM0YjMwMDUzM2FmZTgzMjY4MzE5MzFmYTUzYWI3P3M9NDgwJnI9cGcmZD1odHRwcyUzQSUyRiUyRmNkbi5hdXRoMC5jb20lMkZhdmF0YXJzJTJGaGwucG5nIiwidXNlcl9pZCI6ImF1dGgwfDUxNTE2ZDUxYTQ2NTg1N2IyZDAwMDFmNyIsIm5hbWUiOiJoZW5yeUBleGljb24ubW9iaSIsIm5pY2tuYW1lIjoiaGVucnkiLCJpZGVudGl0aWVzIjpbeyJ1c2VyX2lkIjoiNTE1MTZkNTFhNDY1ODU3YjJkMDAwMWY3IiwicHJvdmlkZXIiOiJhdXRoMCIsImNvbm5lY3Rpb24iOiJiYXQtbW9uZ29kYiIsImlzU29jaWFsIjpmYWxzZX1dLCJjcmVhdGVkX2F0IjoiMjAxNi0wMy0wMVQwMzoyODo0OC4wNDZaIiwiZ2xvYmFsX2NsaWVudF9pZCI6ImIzVGd3MTVqdHdJcnZnZldoVlp6QXg3TlVqaDFmM29wIiwiaXNzIjoiaHR0cHM6Ly9leGljb24tZGV2LmF1dGgwLmNvbS8iLCJzdWIiOiJhdXRoMHw1MTUxNmQ1MWE0NjU4NTdiMmQwMDAxZjciLCJhdWQiOiJXNnE4VTF4aXRyRHpDOEtrb2xUTlhCeTBYSFNWRFVXRyIsImV4cCI6MTQ1NjkxMDQ3NSwiaWF0IjoxNDU2ODI0MDc1fQ."
-      "7DT6qKeuGEhy7ZsFkWTGytgXToMw01mLQGF9DvMi3XA&"
-      "token_type=Bearer"))
+       "access_token=NtWQsC2c8udqlurh&"
+       "id_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9."
+       "eyJfaWQiOiI2MDFlMDk1N2I5MWM2MGZiMmU3NDVkZjZhMmIyMTc0NCIsImdpdmVuX25hbWUiOiJIZW5yeSIsImZhbWlseV9uYW1lIjoiTGl1IiwiZW1haWwiOiJoZW5yeUBleGljb24ubW9iaSIsImNsaWVudElEIjoiVzZxOFUxeGl0ckR6QzhLa29sVE5YQnkwWEhTVkRVV0ciLCJ1cGRhdGVkX2F0IjoiMjAxNi0wMy0wMVQwOToyMToxNS42ODlaIiwicGljdHVyZSI6Imh0dHBzOi8vcy5ncmF2YXRhci5jb20vYXZhdGFyL2U5MTM0YjMwMDUzM2FmZTgzMjY4MzE5MzFmYTUzYWI3P3M9NDgwJnI9cGcmZD1odHRwcyUzQSUyRiUyRmNkbi5hdXRoMC5jb20lMkZhdmF0YXJzJTJGaGwucG5nIiwidXNlcl9pZCI6ImF1dGgwfDUxNTE2ZDUxYTQ2NTg1N2IyZDAwMDFmNyIsIm5hbWUiOiJoZW5yeUBleGljb24ubW9iaSIsIm5pY2tuYW1lIjoiaGVucnkiLCJpZGVudGl0aWVzIjpbeyJ1c2VyX2lkIjoiNTE1MTZkNTFhNDY1ODU3YjJkMDAwMWY3IiwicHJvdmlkZXIiOiJhdXRoMCIsImNvbm5lY3Rpb24iOiJiYXQtbW9uZ29kYiIsImlzU29jaWFsIjpmYWxzZX1dLCJjcmVhdGVkX2F0IjoiMjAxNi0wMy0wMVQwMzoyODo0OC4wNDZaIiwiZ2xvYmFsX2NsaWVudF9pZCI6ImIzVGd3MTVqdHdJcnZnZldoVlp6QXg3TlVqaDFmM29wIiwiaXNzIjoiaHR0cHM6Ly9leGljb24tZGV2LmF1dGgwLmNvbS8iLCJzdWIiOiJhdXRoMHw1MTUxNmQ1MWE0NjU4NTdiMmQwMDAxZjciLCJhdWQiOiJXNnE4VTF4aXRyRHpDOEtrb2xUTlhCeTBYSFNWRFVXRyIsImV4cCI6MTQ1NjkxMDQ3NSwiaWF0IjoxNDU2ODI0MDc1fQ."
+       "7DT6qKeuGEhy7ZsFkWTGytgXToMw01mLQGF9DvMi3XA&"
+       "token_type=Bearer"))
 
 (defn show-auth0-lock []
-  (.show lock (clj->js
-                {:container "auth0-lock-container"})))
+  (.show lock (clj->js {})))
+
+(defelem user-elem [{:keys [profile]} _]
+  (cell-let
+    [{:keys [picture name email]} profile]
+    (div :style "display: flex; align-items: center;"
+         (img :src picture
+              :style "width: 50px; height: auto;")
+         (div
+           (span name) (br)
+           (span email)))))
 
 (defn content []
   (spliced
     (h1 "Auth index page")
+
+    (h2 "Current user")
+
+    (user-elem :profile user-profile)
 
     (h3 "JWT payload decoded manually")
     (pre (cell= (pp-str jwt-payload)))
