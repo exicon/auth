@@ -38,5 +38,8 @@
    [cljsjs/boot-cljsjs "0.5.1"]
    [hoplon/boot-hoplon "0.1.13"]
    [hoplon "6.0.0-alpha13"]
-   [cljsjs/auth0-lock "8.1.5-0"]]
+   [cljsjs/auth0-lock "8.1.5-0"]
+   [deraen/boot-less "0.5.0"]
+   [org.slf4j/slf4j-nop "1.7.13" :scope "test"]
+   ]
   :source-paths ["src/fe" "src/be"])

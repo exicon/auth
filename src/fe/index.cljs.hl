@@ -16,8 +16,7 @@
                         "user-scalable=no"))
     (link :rel "shortcut icon"
           :href "https://appboard.exiconglobal.com/images/favicon.ico")
-    (link :rel "stylesheet" :href "/auth0-lock.css")
-    (link :rel "stylesheet" :href "/pure.css")
+    (link :rel "stylesheet" :href "/index.css")
     (style :type "text/css" "body {padding: 1em;}")
 
     (script ""))

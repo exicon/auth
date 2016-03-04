@@ -40,7 +40,10 @@
     [cljsjs/boot-cljsjs "0.5.1"]
     [hoplon/boot-hoplon "0.1.13"]
     [hoplon "6.0.0-alpha13"]
-    [cljsjs/auth0-lock "8.1.5-0"]]
+    [cljsjs/auth0-lock "8.1.5-0"]
+    [deraen/boot-less "0.5.0"]
+    [org.slf4j/slf4j-nop "1.7.13" :scope "test"]
+    ]
   :source-paths #{"src/be"}
   :resource-paths #{"resources"})
 
@@ -76,7 +79,8 @@
   '[adzerk.boot-reload :refer [reload]]
   '[pandeiro.boot-http :refer [serve]]
   '[adzerk.boot-cljs :refer [cljs]]
-  '[cljsjs.boot-cljsjs :refer [from-cljsjs]])
+  '[cljsjs.boot-cljsjs :refer [from-cljsjs]]
+  '[deraen.boot-less :refer [less]])
 
 (task-options!
   cljs {:compiler-options {:pseudo-names    true
@@ -90,6 +94,7 @@
            (watch)
            (environ :env {:backend-url "http://localhost:9001"})
            (speak)
+           (less)
            (hoplon :pretty-print true)
            (reload)
            (cljs :optimizations :none
