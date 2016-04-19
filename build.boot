@@ -11,9 +11,9 @@
     [hoplon/castra "3.0.0-alpha3"]
 
     ; Backend dependencies
-    [com.novemberain/monger "3.0.1"]
+    [com.novemberain/monger "3.0.2"]
 
-    [camel-snake-kebab "0.3.2"]
+    [camel-snake-kebab "0.4.0"]
     [org.clojure/data.json "0.2.6"]
     [org.clojure/data.csv "0.1.3"]
     [org.clojure/data.xml "0.0.8"]
@@ -23,24 +23,24 @@
     [jumblerg/ring.middleware.cors "1.0.1"]
     [com.stuartsierra/component "0.3.1"]
     [org.danielsz/system "0.3.0-SNAPSHOT"]
-    [environ "1.0.1"]
+    [environ "1.0.2"]
     [danielsz/boot-environ "0.0.5"]
     [ring "1.4.0"]
-    [ring/ring-defaults "0.1.5"]
+    [ring/ring-defaults "0.2.0"]
     [ring.middleware.conditional "0.2.0"]
 
-    [buddy/buddy-sign "0.9.0"]
+    [buddy/buddy-sign "0.12.0"]
 
     ; Frontend dependencies
-    [org.clojure/clojurescript "1.7.228"]
+    [org.clojure/clojurescript "1.8.40" :scope "test"]
     [adzerk/boot-cljs "1.7.228-1"]
-    [binaryage/devtools "0.5.2"]
+    [binaryage/devtools "0.6.1"]
     [pandeiro/boot-http "0.7.3"]
-    [adzerk/boot-reload "0.4.5"]
+    [adzerk/boot-reload "0.4.7"]
     [cljsjs/boot-cljsjs "0.5.1"]
     [hoplon/boot-hoplon "0.1.13"]
     [hoplon "6.0.0-alpha13"]
-    [cljsjs/auth0-lock "8.1.5-0"]
+    [cljsjs/auth0-lock "8.1.5-1"]
     [deraen/boot-less "0.5.0"]
     [org.slf4j/slf4j-nop "1.7.13" :scope "test"]
     ]
