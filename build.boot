@@ -32,6 +32,9 @@
 
     [buddy/buddy-sign "0.12.0"]
 
+    [midje "1.8.2"]
+    [zilti/boot-midje "0.2.1-SNAPSHOT"]
+
     ; Frontend dependencies
     [org.clojure/clojurescript "1.8.40" :scope "test"]
     [adzerk/boot-cljs "1.7.228-1"]
@@ -53,7 +56,8 @@
   '[reloaded.repl :as repl :refer [system start stop go reset]]
   '[danielsz.boot-environ :refer [environ]]
   '[sys]
-  '[system.boot])
+  '[system.boot]
+  '[zilti.boot-midje])
 
 (task-options!
   speak {:theme "ordinance"}
@@ -61,6 +65,20 @@
   ; lein-generate gets the project name and version from here
   pom {:project (get-env :project)
        :version (get-env :version)})
+
+;;; Copied from boot-test:
+;;; This prevents a name collision WARNING between the test task and
+;;; clojure.core/test, a function that nobody really uses or cares
+;;; about.
+(if ((loaded-libs) 'boot.user)
+  (ns-unmap 'boot.user 'test))
+
+(alter-var-root #'midje.sweet/include-midje-checks (constantly false))
+
+(deftask test []
+  (alter-var-root #'midje.sweet/include-midje-checks (constantly true))
+  (merge-env! :source-paths #{"test"})
+  (zilti.boot-midje/midje))
 
 (deftask be "Back End" []
   (comp

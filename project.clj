@@ -30,6 +30,9 @@
 
    [buddy/buddy-sign "0.12.0"]
 
+   [midje "1.8.2"]
+   [zilti/boot-midje "0.2.1-SNAPSHOT"]
+
    ; Frontend dependencies
    [org.clojure/clojurescript "1.8.40" :scope "test"]
    [adzerk/boot-cljs "1.7.228-1"]
