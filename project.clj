@@ -7,6 +7,7 @@
   [; Common dependencies
    [org.clojure/clojure "1.8.0"]
    [hoplon/castra "3.0.0-alpha3"]
+   [philoskim/debux "0.2.0"]
 
    ; Backend dependencies
    [com.novemberain/monger "3.0.2"]

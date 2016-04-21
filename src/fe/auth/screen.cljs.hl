@@ -17,6 +17,27 @@
 
 (def route (route-cell "#/"))
 
+(def current-user (cell :unknown))
+(def error (cell nil))
+(def loading (cell []))
+
+(def id-token (-> (cell nil) (local-storage 'id-token)))
+; FIXME To avoid escaping within formula cells we can have a function
+; which implicitly depends on the id-token cell
+(defn reset-id-token [v] (reset! id-token v))
+
+(def get-current-user
+  (fn [& args]
+    (when-let [jwt @id-token]
+      (.ajaxSetup js/jQuery (clj->js {:headers {:authorization jwt}})))
+    (apply (mkremote
+             'api/get-current-user
+             current-user
+             error loading
+             {:url (env :backend-url)}) args)))
+
+(get-current-user)
+
 (def got-authorized?
   (cell= (not (str/starts-with? route "#/"))))
 
@@ -25,11 +46,6 @@
 
 (defn parse-hash [lock hash]
   (as-clj (.parseHash lock hash)))
-
-(def id-token (-> (cell nil) (local-storage 'id_token)))
-; FIXME To avoid escaping within formula cells we can have a function
-; which implicitly depends on the id-token cell
-(defn reset-id-token [v] (reset! id-token v))
 
 (def authorized? (cell= id-token))
 (def unauthorized? (cell= (not id-token)))
@@ -89,6 +105,9 @@
        (div :class "pure-u-1"
             (h1 "Auth index page")
 
+            (pre :css {:background-color "pink"}
+                 (cell= (some-> error .-serverStack)))
+
             (div :toggle unauthorized?
                  (a :class "pure-button pure-button-active"
                     :href (auth0-login-url
@@ -126,4 +145,7 @@
 
                  (pre (cell= (pp-str user-profile)))
 
-                 (div :id "auth0-lock-container")))))
+                 (div :id "auth0-lock-container"))
+
+            (h2 "RPC test")
+            (pre (cell= (pp-str current-user))))))

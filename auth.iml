@@ -103,6 +103,7 @@
     <orderEntry type="library" name="Leiningen: org.tcrawley/dynapath:0.2.3" level="project" />
     <orderEntry type="library" name="Leiningen: org.tukaani/xz:1.5" level="project" />
     <orderEntry type="library" name="Leiningen: pandeiro/boot-http:0.7.3" level="project" />
+    <orderEntry type="library" name="Leiningen: philoskim/debux:0.2.0" level="project" />
     <orderEntry type="library" name="Leiningen: prismatic/schema:1.0.4" level="project" />
     <orderEntry type="library" name="Leiningen: reloaded.repl:0.1.0" level="project" />
     <orderEntry type="library" name="Leiningen: riddley:0.1.6" level="project" />

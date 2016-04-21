@@ -9,6 +9,7 @@
     ; Common dependencies
     [org.clojure/clojure "1.8.0"]
     [hoplon/castra "3.0.0-alpha3"]
+    [philoskim/debux "0.2.0"]
 
     ; Backend dependencies
     [com.novemberain/monger "3.0.2"]
@@ -42,8 +43,7 @@
     [hoplon "6.0.0-alpha13"]
     [cljsjs/auth0-lock "8.1.5-1"]
     [deraen/boot-less "0.5.0"]
-    [org.slf4j/slf4j-nop "1.7.13" :scope "test"]
-    ]
+    [org.slf4j/slf4j-nop "1.7.13" :scope "test"]]
   :source-paths #{"src/be"}
   :resource-paths #{"resources"})
 
@@ -52,7 +52,7 @@
 (require
   '[reloaded.repl :as repl :refer [system start stop go reset]]
   '[danielsz.boot-environ :refer [environ]]
-  '[systems]
+  '[sys]
   '[system.boot])
 
 (task-options!
@@ -63,14 +63,14 @@
        :version (get-env :version)})
 
 (deftask be "Back End" []
-         (comp
-           (environ :env {:http-port 9001})
-           (watch)
-           (system.boot/system
-             :sys #'systems/dev
-             :auto true
-             :files ["systems.clj"])
-           (repl :server true)))
+  (comp
+    (environ :env {:http-port 9001})
+    (watch)
+    (system.boot/system
+      :sys #'sys/dev
+      :auto true
+      :files ["sys.clj" "core.clj"])
+    (repl :server true)))
 
 ; =============== Frontend ===============
 
@@ -83,20 +83,29 @@
   '[deraen.boot-less :refer [less]])
 
 (task-options!
-  cljs {:compiler-options {:pseudo-names    true
-                           :parallel-builds true}})
+  cljs {:compiler-options {:pseudo-names   true
+                           :parallel-build true}}
+  from-cljsjs {:profile :production}
+  cljs {:optimizations :advanced})
+
+(deftask fe-build []
+  (set-env! :source-paths #{"src/fe/"})
+  (comp
+    (from-cljsjs)
+    (environ :env {:backend-url "http://localhost:9001"})
+    (less)
+    (hoplon :pretty-print true)
+    (reload)
+    (cljs)))
 
 (deftask fe
-         []
-         (set-env! :source-paths #{"src/fe/"})
-         (comp
-           (from-cljsjs :profile :development)
-           (watch)
-           (environ :env {:backend-url "http://localhost:9001"})
-           (speak)
-           (less)
-           (hoplon :pretty-print true)
-           (reload)
-           (cljs :optimizations :none
-                 :source-map true)
-           (serve :port 9000)))
+  []
+  (task-options!
+    from-cljsjs {:profile :production}
+    cljs {:optimizations :none
+          :source-map    true})
+  (comp
+    (watch)
+    (speak)
+    (fe-build)
+    (serve :port 9000)))
