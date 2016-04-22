@@ -11,6 +11,9 @@
     (jws/unsign jwt (base64/decode (env :auth0-client-secret)))))
 
 (defrpc get-current-user []
-  {:rpc/pre (authorized?)}
+  ;{:rpc/pre (authorized?)}
   {:req  (dissoc *request* :body)
    :sess (str @*session*)})
+
+(defrpc rpc-error []
+  (ex-info "Error" {}))

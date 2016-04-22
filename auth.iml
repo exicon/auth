@@ -19,6 +19,7 @@
     <orderEntry type="library" name="Leiningen: binaryage/devtools:0.6.1" level="project" />
     <orderEntry type="library" name="Leiningen: boot/core:2.6.0-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Leiningen: boot/pod:2.6.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Leiningen: buddy/buddy-auth:0.12.0" level="project" />
     <orderEntry type="library" name="Leiningen: buddy/buddy-core:0.12.1" level="project" />
     <orderEntry type="library" name="Leiningen: buddy/buddy-sign:0.12.0" level="project" />
     <orderEntry type="library" name="Leiningen: camel-snake-kebab:0.4.0" level="project" />
@@ -31,6 +32,7 @@
     <orderEntry type="library" name="Leiningen: cljsjs/jquery:1.9.1-0" level="project" />
     <orderEntry type="library" name="Leiningen: clojure-complete:0.2.4" level="project" />
     <orderEntry type="library" name="Leiningen: clojurewerkz/support:1.1.0" level="project" />
+    <orderEntry type="library" name="Leiningen: clout:2.1.2" level="project" />
     <orderEntry type="library" name="Leiningen: colorize:0.1.1" level="project" />
     <orderEntry type="library" name="Leiningen: com.cognitect/transit-clj:0.8.281" level="project" />
     <orderEntry type="library" name="Leiningen: com.cognitect/transit-cljs:0.8.225" level="project" />
@@ -61,12 +63,14 @@
     <orderEntry type="library" name="Leiningen: deraen/boot-less:0.5.0" level="project" />
     <orderEntry type="library" name="Leiningen: environ:1.0.2" level="project" />
     <orderEntry type="library" name="Leiningen: flare:0.2.9" level="project" />
+    <orderEntry type="library" name="Leiningen: funcool/cuerdas:0.7.1" level="project" />
     <orderEntry type="library" name="Leiningen: hiccup:1.0.5" level="project" />
     <orderEntry type="library" name="Leiningen: hoplon/boot-hoplon:0.1.13" level="project" />
     <orderEntry type="library" name="Leiningen: hoplon/castra:3.0.0-alpha3" level="project" />
     <orderEntry type="library" name="Leiningen: hoplon/javelin:3.8.4" level="project" />
     <orderEntry type="library" name="Leiningen: hoplon:6.0.0-alpha13" level="project" />
     <orderEntry type="library" name="Leiningen: http-kit:2.1.18" level="project" />
+    <orderEntry type="library" name="Leiningen: instaparse:1.4.0" level="project" />
     <orderEntry type="library" name="Leiningen: javax.servlet/javax.servlet-api:3.1.0" level="project" />
     <orderEntry type="library" name="Leiningen: javax.servlet/servlet-api:2.5" level="project" />
     <orderEntry type="library" name="Leiningen: joda-time:2.8.2" level="project" />
@@ -128,6 +132,7 @@
     <orderEntry type="library" name="Leiningen: ring/ring-devel:1.4.0" level="project" />
     <orderEntry type="library" name="Leiningen: ring/ring-headers:0.2.0" level="project" />
     <orderEntry type="library" name="Leiningen: ring/ring-jetty-adapter:1.4.0" level="project" />
+    <orderEntry type="library" name="Leiningen: ring/ring-mock:0.3.0" level="project" />
     <orderEntry type="library" name="Leiningen: ring/ring-servlet:1.4.0" level="project" />
     <orderEntry type="library" name="Leiningen: ring/ring-ssl:0.2.1" level="project" />
     <orderEntry type="library" name="Leiningen: ring:1.4.0" level="project" />

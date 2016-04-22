@@ -28,22 +28,24 @@
    [ring/ring-defaults "0.2.0"]
    [ring.middleware.conditional "0.2.0"]
 
+   [buddy/buddy-auth "0.12.0"]
    [buddy/buddy-sign "0.12.0"]
 
-   [midje "1.8.2"]
-   [zilti/boot-midje "0.2.1-SNAPSHOT"]
+   [midje "1.8.2" :scope "test"]
+   [zilti/boot-midje "0.2.1-SNAPSHOT" :scope "test"]
+   [ring/ring-mock "0.3.0" :scope "test"]
 
    ; Frontend dependencies
    [org.clojure/clojurescript "1.8.40" :scope "test"]
-   [adzerk/boot-cljs "1.7.228-1"]
+   [adzerk/boot-cljs "1.7.228-1" :scope "test"]
    [binaryage/devtools "0.6.1"]
    [pandeiro/boot-http "0.7.3"]
-   [adzerk/boot-reload "0.4.7"]
-   [cljsjs/boot-cljsjs "0.5.1"]
-   [hoplon/boot-hoplon "0.1.13"]
+   [adzerk/boot-reload "0.4.7" :scope "test"]
+   [cljsjs/boot-cljsjs "0.5.1" :scope "test"]
+   [deraen/boot-less "0.5.0" :scope "test"]
+   [hoplon/boot-hoplon "0.1.13" :scope "test"]
    [hoplon "6.0.0-alpha13"]
    [cljsjs/auth0-lock "8.1.5-1"]
-   [deraen/boot-less "0.5.0"]
    [org.slf4j/slf4j-nop "1.7.13" :scope "test"]
 
    ; IntelliJ dependencies

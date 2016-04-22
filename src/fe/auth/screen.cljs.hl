@@ -1,7 +1,7 @@
 (ns auth.screen
   (:require-macros
     [hoplon.core :refer [with-init! defelem]]
-    [javelin.core :refer [defc defc= cell=]]
+    [javelin.core :refer [defc defc= cell= dosync]]
     [compile-time-config :refer [env]])
   (:require
     [hoplon.core :refer :all]
@@ -10,7 +10,8 @@
     [castra.core :refer [mkremote]]
     [clojure.string :as str]
     [cljsjs.auth0-lock]
-    [cljs.pprint :refer [pprint]]))
+    [cljs.pprint :refer [pprint]]
+    [debux.cs.core :refer-macros [clog]]))
 
 (defn pp-str [x] (with-out-str (pprint x)))
 (defn as-clj [x] (js->clj x :keywordize-keys true))
@@ -21,24 +22,35 @@
 (def error (cell nil))
 (def loading (cell []))
 
-(def id-token (-> (cell nil) (local-storage 'id-token)))
+(def id-token (-> (cell nil) (local-storage 'identity)))
 ; FIXME To avoid escaping within formula cells we can have a function
 ; which implicitly depends on the id-token cell
-(defn reset-id-token [v] (reset! id-token v))
+(defn remember-id-token [v] (reset! id-token v))
+(defn forget-id-token [] (reset! id-token nil))
 
 (def get-current-user
   (fn [& args]
     (when-let [jwt @id-token]
-      (.ajaxSetup js/jQuery (clj->js {:headers {:authorization jwt}})))
+      (.ajaxSetup js/jQuery (clj->js {:headers
+                                      {:authorization (str "Bearer " jwt)}})))
     (apply (mkremote
              'api/get-current-user
              current-user
              error loading
              {:url (env :backend-url)}) args)))
 
-(get-current-user)
+(def rpc-error
+  (fn [& args]
+    (when-let [jwt @id-token]
+      (.ajaxSetup js/jQuery (clj->js {:headers
+                                      {:authorization (str "Bearer " jwt)}})))
+    (apply (mkremote
+             'api/error-rpc
+             current-user
+             error loading
+             {:url (env :backend-url)}) args)))
 
-(def got-authorized?
+(def got-id-token?
   (cell= (not (str/starts-with? route "#/"))))
 
 (def lock (js/Auth0Lock. (env :auth0-client-id)
@@ -47,13 +59,24 @@
 (defn parse-hash [lock hash]
   (as-clj (.parseHash lock hash)))
 
-(def authorized? (cell= id-token))
-(def unauthorized? (cell= (not id-token)))
+(def authenticated?
+  "It means we have an id-token, which we either successfully got,
+   but it might be expired or forged."
+  (cell= id-token))
+
+(def unauthenticated? (cell= (not id-token)))
+
+;(cell=
+;  (when authenticated?
+;    (get-current-user)))
+
+(with-init!
+  (get-current-user))
 
 ; GotAuthorized phase
 (cell=
-  (when got-authorized?
-    (reset-id-token (-> (parse-hash lock route) :id_token))))
+  (when got-id-token?
+    (remember-id-token (-> (parse-hash lock route) :id_token))))
 
 (defn get-profile [lock id-token profile-cell]
   (let [store-profile (fn [err profile]
@@ -67,7 +90,7 @@
 
 ; Authorized phase triggers getting the user profile
 (cell=
-  (when authorized?
+  (when authenticated?
     (get-user-profile)))
 
 (defn auth0-login-url [config]
@@ -90,6 +113,22 @@
 (defn show-auth0-lock []
   (.show lock (clj->js {})))
 
+(defn reset-error! []
+  (reset! error nil))
+
+; Show login screen when for example the get-current-user RPC call
+; failed with an unauthorized response.
+; The token should be reset because it was either corrupted or expired
+; and that's why we got an unauthorized RPC error.
+; In this case it should never be used again, so it's cleared.
+; If we don't clear it, when the this app loads after being redirected
+; from the auth0 login page we would think we are authenticated
+(cell=
+  (when (and error
+             (= :unauthorized (.-data error)))
+    (dosync (forget-id-token)
+            (show-auth0-lock))))
+
 (defelem user-elem [{:keys [profile]} _]
   (cell-let
     [{:keys [picture name email]} profile]
@@ -106,9 +145,12 @@
             (h1 "Auth index page")
 
             (pre :css {:background-color "pink"}
+                 (cell= (str error)))
+
+            (pre :css {:background-color "lime"}
                  (cell= (some-> error .-serverStack)))
 
-            (div :toggle unauthorized?
+            (div :toggle unauthenticated?
                  (a :class "pure-button pure-button-active"
                     :href (auth0-login-url
                             {:auth0-url          (env :auth0-url)
@@ -125,19 +167,21 @@
                  (span :html "&nbsp;"))
 
             (button :class "pure-button"
-                    :toggle authorized?
-                    :click #(reset-id-token nil)
+                    :toggle authenticated?
+                    :click #(forget-id-token)
                     "Log out")
 
-            (div :toggle got-authorized?
+            (div :toggle got-id-token?
                  (button :class "pure-button"
                          :click #(set! js/window.location.hash "#/")
                          "Continue to the application"))
 
-            (div :toggle authorized?
+            (div :toggle authenticated?
                  (h2 "Current user")
                  (user-elem :profile user-profile)
 
+                 (br)
+                 (button :click #(rpc-error) "BE Error")
                  (h3 "JWT decoded by Auth0 Lock")
                  (pre (cell= (pp-str (parse-hash lock route))))
 
