@@ -23,17 +23,6 @@
     (dx/dbg req "REQUEST")
     (dx/dbg (handler req) "RESPONSE")))
 
-(defn wrap-auth [handler auth0-client-secret]
-  "If req is authenticated calls the next handler
-   else ..."
-  (fn [req]
-    (let [jwt (-> req :headers (get "Authorization") (s/split #" ") second)
-          secret-bytes (base64/decode auth0-client-secret)
-          {subject :sub} (jws/unsign jwt secret-bytes)]
-      (-> req
-          (assoc-in [:session :user-id] subject)
-          (handler)))))
-
 (defn auth0-backend []
   (jws-backend {:secret               (base64/decode (env :auth0-client-secret))
                 :token-name           "Bearer"}))

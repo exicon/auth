@@ -4,16 +4,14 @@
     [castra.core :refer [defrpc *request* *session*]]
     [ring.util.request :refer [body-string]]
     [buddy.sign.jws :as jws]
-    [buddy.core.codecs.base64 :as base64]))
+    [buddy.core.codecs.base64 :as base64]
+    [debux.core :as dx]))
 
 (defn authorized? [& args]
-  (when-let [jwt (-> *request* :headers (get "authorization"))]
-    (jws/unsign jwt (base64/decode (env :auth0-client-secret)))))
+  (:identity *request*))
 
 (defrpc get-current-user []
-  ;{:rpc/pre (authorized?)}
-  {:req  (dissoc *request* :body)
-   :sess (str @*session*)})
-
-(defrpc rpc-error []
-  (ex-info "Error" {}))
+  {:rpc/pre (authorized?)}
+  (:identity *request*)
+  ;(ex-info "Error" {})
+  )
