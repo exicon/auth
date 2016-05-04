@@ -1,0 +1,136 @@
+(ns auth.popup
+  (:require-macros
+    [hoplon.core :refer [with-init! defelem]]
+    [javelin.core :refer [defc defc= cell= dosync]]
+    [compile-time-config :refer [env]])
+  (:require
+    [hoplon.core :refer :all]
+    [hoplon.storage-atom :refer [local-storage]]
+    [javelin.core :refer [cell]]
+    [castra.core :refer [mkremote]]
+    [clojure.string :as str]
+    [cljsjs.auth0-lock]
+    [goog.net.cookies]
+    [cljs.pprint :refer [pprint]]
+    [debux.cs.core :refer-macros [clog]]
+
+    [auth.core :as auth
+     :refer [route lock now* claim session-time-left
+             id-token remember-id-token forget-id-token
+             current-user get-current-user
+             pp-str as-clj renew-id-token schedule-id-token-renewal]]))
+
+(def user-profile (cell nil))
+(defn reset-user-profile! [js-profile]
+  (reset! user-profile (as-clj js-profile)))
+
+(def authenticated?
+  "It means we have an id-token, which we either successfully got,
+   but it might be expired or forged."
+  (cell= (or id-token
+             (.containsKey goog.net.cookies "appboard.v1"))))
+
+(def unauthenticated? (cell= (not id-token)))
+
+
+(defn get-user-profile []
+  (.getProfile lock @id-token
+               (fn [err profile]
+                 (reset-user-profile! profile))))
+
+(cell=
+  (when authenticated?
+    (get-user-profile)))
+
+
+;(get-current-user)
+
+(def lock-visible? (cell false))
+(defn show-lock! [] (reset! lock-visible? true))
+(defn hide-lock! [] (reset! lock-visible? false))
+(.on lock "shown" show-lock!)
+(.on lock "hidden" hide-lock!)
+
+; On dev mode reload if the Lock window is visible,
+; it is wiped by the Hoplon page regeneration,
+; but the Lock object is not aware of it,
+; so we hide it explicitely.
+(on-page-load hide-lock!)
+
+
+(defn js-show-lock []
+  (.show lock
+         (clj->js
+           {:authParams        {:scope  "openid app_metadata"
+                                :device "dev1"}
+            :popup             true
+            :sso               false
+            :rememberLastLogin false
+            :closable          true})
+         (fn [err user-profile jwt-id-token]
+           (remember-id-token jwt-id-token)
+           (reset-user-profile! user-profile))))
+
+(defn js-hide-lock []
+  (.hide lock))
+
+(with-init!
+  (-> #(cell= (if lock-visible?
+                (js-show-lock)
+                (js-hide-lock)))
+      (timeout 200)                                         ; avoid FOUC
+      ))
+
+(with-init!
+  (cell= (when (nil? id-token)
+           (show-lock!))))
+
+
+; Show login screen when for example the get-current-user RPC call
+; failed with an unauthorized response.
+; The token should be reset because it was either corrupted or expired
+; and that's why we got an unauthorized RPC error.
+; In this case it should never be used again, so it's cleared.
+; If we don't clear it, when the this app loads after being redirected
+; from the auth0 login page we would think we are authenticated
+;(cell=
+;  (when (and auth/error
+;             (= :unauthorized (.-data auth/error)))
+;    (dosync (forget-id-token)
+;            (show-lock!))))
+
+(defn content []
+  (div :class "pure-g"
+       (div :class "pure-u-1"
+            (h1 "POPUP mode login")
+
+            (div :toggle unauthenticated?
+                 (button :class "pure-button"
+                         :click show-lock!
+                         "Show Auth0 Lock login/signup dialog")
+
+                 (span :html "&nbsp;"))
+
+            (div :toggle authenticated?
+                 (button :class "pure-button"
+                         :click #(do (forget-id-token)
+                                     (reset! user-profile nil)
+                                     (reset! current-user :unknown))
+                         "Log out")
+
+                 (button :class "pure-button"
+                         :click renew-id-token
+                         "Renew my token please!"))
+
+            (div :toggle user-profile
+                 (h2 "Current user")
+                 (auth/user-elem :profile user-profile)
+
+                 (h3 "User profile returned by Auth0 Lock callback")
+
+                 (pre (cell= (pp-str user-profile))))
+
+            (div :id "auth0-lock-container")
+
+            (h2 "RPC test (current-user)")
+            (pre (cell= (pp-str current-user))))))

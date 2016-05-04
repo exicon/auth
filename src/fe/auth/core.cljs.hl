@@ -1,0 +1,141 @@
+(ns auth.core
+  (:require-macros
+    [hoplon.core :refer [with-init! defelem]]
+    [javelin.core :refer [defc defc= cell= dosync]]
+    [compile-time-config :refer [env]])
+  (:require
+    [hoplon.core :refer :all]
+    [hoplon.storage-atom :refer [local-storage]]
+    [javelin.core :refer [cell]]
+    [castra.core :refer [mkremote assoc-when xhr-resp-headers]]
+    [clojure.string :as str]
+    [cljsjs.auth0-lock]
+    [cljs.pprint :refer [pprint]]
+    [debux.cs.core :refer-macros [clog]]
+    [cognitect.transit :as t]))
+
+(defn pp-str [x] (with-out-str (pprint x)))
+(defn as-clj [x] (js->clj x :keywordize-keys true))
+
+(def route (route-cell "#/"))
+
+(def current-user (cell :unknown))
+(def loading (cell []))
+(def error (cell nil))
+
+(defelem frontend-error []
+  (pre :toggle error
+       :css {:background-color "black"
+             :color            "lime"}
+       (cell= (str error))))
+
+(defelem backend-error []
+  (pre :toggle error
+       :css {:background-color "blue"
+             :color            "lightblue"}
+       (cell= (some-> error :stack))))
+
+(def lock (js/Auth0Lock.
+            (env :auth0-client-id)
+            (subs (env :auth0-url) 8)))                     ; remove https://
+
+(defn decode-jwt [lock jwt]
+  (when lock
+    (as-clj (.. lock (getClient) (decodeJwt jwt)))))
+
+(def id-token (-> (cell nil) (local-storage 'id-token)))
+
+(def claim (cell= (when id-token (decode-jwt lock id-token))))
+
+; FIXME To avoid escaping within formula cells we can have a function
+; which implicitly depends on the id-token cell
+(defn remember-id-token [v] (reset! id-token v))
+(defn forget-id-token [] (reset! id-token nil))
+
+(defn renew-id-token []
+  (let [callback (fn [err delegation-result]
+                   (if err
+                     (pr err)
+                     (remember-id-token
+                       (.-id_token delegation-result))))]
+    (.. lock (getClient) (renewIdToken @id-token callback))))
+
+(defn now* []
+  (int (/ (.now js/Date) 1000)))
+
+(defn session-time-left [claim now]
+  (- (:exp claim) now))
+
+(defn schedule-id-token-renewal [in-seconds]
+  (js/setTimeout #(renew-id-token)
+                 (* 1000 in-seconds)))
+
+; Start automatic token renewal
+(cell=
+  (when id-token
+    (let [time-left (session-time-left claim (now*))
+         renew-before 5
+         renewable? (fn [t] (< renew-before t))]
+     (if (renewable? time-left)
+       (schedule-id-token-renewal (- time-left renew-before))
+       (forget-id-token)))))
+
+(defn ajax-fn
+  "Ajax request implementation using the standard jQuery ajax machinery."
+  [{:keys [url timeout credentials headers body]}]
+  (let [prom (.Deferred js/jQuery)
+        opts (-> {"async"       true
+                  "contentType" "application/transit+json"
+                  "data"        body
+                  "dataType"    "text"
+                  "headers"     (assoc-when headers "Authorization"
+                                            (when-let [jwt @id-token]
+                                              (str "Bearer " jwt)))
+                  "processData" false
+                  "type"        "POST"
+                  "url"         url
+                  "timeout"     timeout}
+                 (assoc-when "xhrFields"
+                             (assoc-when nil "withCredentials" credentials)))
+        resp (fn [x]
+               {:status      (.-status x)
+                :status-text (.-statusText x)
+                :body        (.-responseText x)
+                :headers     (xhr-resp-headers x ["X-Castra-Tunnel" "X-Castra-Session"])})]
+    (-> (.ajax js/jQuery (clj->js opts))
+        (.done (fn [_ _ x] (.resolve prom (resp x))))
+        (.fail (fn [x _ _] (.reject prom (resp x)))))
+    prom))
+
+(def get-current-user
+  (fn [& args]
+    (apply (mkremote
+             'api/get-current-user
+             current-user
+             error
+             loading
+             {:url     (env :backend-url)
+              :ajax-fn ajax-fn})
+           args)))
+
+(defelem link-button [attrs kids]
+  (a :class "pure-button pure-button-active"
+     attrs kids))
+
+(defelem login-expiry []
+  (let [now (cell (now*))]
+    (js/setInterval #(reset! now (now*)) 1000)
+    (span (cell=
+           (str "(Will be logged out " (session-time-left claim now) "s)")))))
+
+(defelem user-elem [{:keys [profile]} _]
+  (cell-let
+    [{:keys [picture name email]} profile]
+    (div :style "display: flex; align-items: center;"
+         (img :src picture
+              :css {:width  "50px"
+                    :height "auto"})
+         (div :css {:margin-left "1em"}
+              (span name) (br)
+              (span email) (br)
+              (login-expiry)))))

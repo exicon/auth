@@ -1,0 +1,105 @@
+(ns auth.redirect
+  (:require-macros
+    [hoplon.core :refer [with-init! defelem]]
+    [javelin.core :refer [defc defc= cell= dosync]]
+    [compile-time-config :refer [env]])
+  (:require
+    [hoplon.core :refer :all]
+    [hoplon.storage-atom :refer [local-storage]]
+    [javelin.core :refer [cell]]
+    [castra.core :refer [mkremote]]
+    [clojure.string :as str]
+    [cljsjs.auth0-lock]
+    [cljs.pprint :refer [pprint]]
+    [debux.cs.core :refer-macros [clog]]
+
+    [auth.core :as auth
+     :refer [route lock
+             id-token remember-id-token forget-id-token
+             current-user get-current-user
+             pp-str as-clj]]))
+
+(def user-profile (cell nil))
+(defn reset-user-profile! [js-profile]
+  (reset! user-profile (as-clj js-profile)))
+
+(defn auth0-login-url [config]
+  (when-let [{:keys [auth0-url auth0-client-id auth0-redirect-uri]} config]
+    (str auth0-url "/authorize/"
+         "?response_type=token"
+         "&client_id=" auth0-client-id
+         "&redirect_uri=" auth0-redirect-uri
+         "&state="
+         "&scope=openid"
+         "&device=dev1")))
+
+(def authenticated?
+  "It means we have an id-token, which we either successfully got,
+   but it might be expired or forged."
+  (cell= id-token))
+
+(def unauthenticated? (cell= (not id-token)))
+
+(defn parse-hash [lock hash]
+  (as-clj (.parseHash lock hash)))
+
+; GotAuthorized phase
+(def got-id-token?
+  (cell= (str/starts-with? route "#access_token=")))
+
+; Authorized phase triggers getting the user profile
+(cell=
+  (when got-id-token?
+    (remember-id-token (-> (parse-hash lock route) :id_token))))
+
+(defn get-user-profile []
+  (.getProfile lock @id-token
+               (fn [err profile]
+                 (reset-user-profile! profile))))
+
+(cell=
+  (when authenticated?
+    (get-user-profile)))
+
+(defelem content []
+  (spliced
+    (h1 "REDIRECT mode login")
+
+    (div :toggle unauthenticated?
+         (auth/link-button
+           :href (auth0-login-url
+                   (select-keys (env) [:auth0-url
+                                       :auth0-client-id
+                                       :auth0-redirect-uri]))
+           "Login via login page hosted by Auth0")
+
+         (span :html "&nbsp;"))
+
+    (div :toggle (cell= (or got-id-token?
+                            authenticated?))
+         (button :class "pure-button"
+                 :click #(do
+                          (forget-id-token)
+                          (reset! user-profile nil)
+                          (reset! current-user :unknown))
+                 "Log out")
+         (span :html "&nbsp;"))
+
+    (div :toggle got-id-token?
+         (button :class "pure-button"
+                 :click #(set! js/window.location.hash "#/")
+                 "Continue to the application")
+
+         (h3 "JWT decoded by Auth0 Lock")
+         (pre (cell= (pp-str (parse-hash lock route)))))
+
+    (div :toggle user-profile
+         (h2 "Current user")
+         (auth/user-elem :profile user-profile)
+
+         (h3 "User profile requested from Auth0 API via Lock")
+
+         (pre (cell= (pp-str user-profile))))
+
+    (h2 "RPC test (current-user)")
+    (pre (cell= (pp-str current-user)))))

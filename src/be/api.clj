@@ -11,7 +11,7 @@
   (:identity *request*))
 
 (defrpc get-current-user []
-  {:rpc/pre (authorized?)}
+  ;{:rpc/pre (authorized?)}
   (:identity *request*)
   ;(ex-info "Error" {})
   )

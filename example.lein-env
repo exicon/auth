@@ -1,6 +1,7 @@
 {:auth0-url           "https://<tenant>.auth0.com"
  :auth0-redirect-uri  "http://localhost:9000"
- :auth0-client-id     "W6q8asdfadsaferGdFGgERG34tERGdfg"
- :auth0-client-secret "mnmv-alskjdfglskfdjglfkjlkjhgdfgdfhgfhghfdghfggvrloZ-ruVBfs-oxkw"
+ :auth0-client-id     "<auth0-client-id>"
+ :auth0-client-secret "<auth0-client-secret>"
  :db                  "mongodb://parrot.local/appboard-parrot"
- :frontend-url        "http://localhost:9000"}
+ :frontend-url        "http://localhost:9000"
+ :backend-url         "http://localhost:9001"}

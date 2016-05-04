@@ -44,9 +44,9 @@
       (wrap-defaults api-defaults)
       (wrap-castra 'api)
       (wrap-castra-session "0123456789012345")
-      (wrap-not-authenticated)
-      (wrap-authentication (auth0-backend) (session-backend))
+      ;(wrap-not-authenticated)
       (wrap-debug)
+      (wrap-authentication (auth0-backend) #_(session-backend))
       (wrap-session {:cookie-name "appboard.v1"
                      :store (node-mongo-store db "sessions")})
       (wrap-cors (re-pattern (str "^" (env :frontend-url) "/?$")))
