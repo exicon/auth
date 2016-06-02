@@ -21,14 +21,16 @@
 
     [http-kit "2.1.18"]
 
-    [jumblerg/ring.middleware.cors "1.0.1"]
     [com.stuartsierra/component "0.3.1"]
     [org.danielsz/system "0.3.0-SNAPSHOT"]
     [environ "1.0.2"]
     [danielsz/boot-environ "0.0.5"]
     [ring "1.4.0"]
     [ring/ring-defaults "0.2.0"]
+    [ring/ring-json "0.4.0"]
     [ring.middleware.conditional "0.2.0"]
+    [jumblerg/ring.middleware.cors "1.0.1"]
+    [compojure "1.5.0"]
 
     [buddy/buddy-auth "0.12.0"]
     [buddy/buddy-sign "0.12.0"]
@@ -47,7 +49,7 @@
     [deraen/boot-less "0.5.0" :scope "test"]
     [hoplon/boot-hoplon "0.1.13" :scope "test"]
     [hoplon "6.0.0-alpha13"]
-    [cljsjs/auth0-lock "8.1.5-1"]
+    [cljsjs/auth0-lock "9.0.3-0"]
     [org.slf4j/slf4j-nop "1.7.13" :scope "test"]]
   :source-paths #{"src/be"}
   :resource-paths #{"resources"})
@@ -55,7 +57,7 @@
 ; =============== Backend ===============
 
 (require
-  '[reloaded.repl :as repl :refer [system start stop go reset]]
+  '[system.repl :as repl :refer [system start stop go reset]]
   '[danielsz.boot-environ :refer [environ]]
   '[sys]
   '[system.boot]
@@ -105,6 +107,7 @@
   '[deraen.boot-less :refer [less]])
 
 (task-options!
+  reload {:port 9003}
   cljs {:compiler-options {:pseudo-names   true
                            :parallel-build true}}
   from-cljsjs {:profile :production}

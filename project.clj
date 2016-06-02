@@ -19,14 +19,16 @@
 
    [http-kit "2.1.18"]
 
-   [jumblerg/ring.middleware.cors "1.0.1"]
    [com.stuartsierra/component "0.3.1"]
    [org.danielsz/system "0.3.0-SNAPSHOT"]
    [environ "1.0.2"]
    [danielsz/boot-environ "0.0.5"]
    [ring "1.4.0"]
    [ring/ring-defaults "0.2.0"]
+   [ring/ring-json "0.4.0"]
    [ring.middleware.conditional "0.2.0"]
+   [jumblerg/ring.middleware.cors "1.0.1"]
+   [compojure "1.5.0"]
 
    [buddy/buddy-auth "0.12.0"]
    [buddy/buddy-sign "0.12.0"]

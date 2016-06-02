@@ -29,6 +29,6 @@
 
       (cell=
         (spliced
-          (auth.popup/content)
-          ;(auth.redirect/content)
+          ;(auth.popup/content)
+          (auth.redirect/content)
           )))))

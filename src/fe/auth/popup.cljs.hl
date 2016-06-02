@@ -32,17 +32,6 @@
 
 (def unauthenticated? (cell= (not id-token)))
 
-
-(defn get-user-profile []
-  (.getProfile lock @id-token
-               (fn [err profile]
-                 (reset-user-profile! profile))))
-
-(cell=
-  (when authenticated?
-    (get-user-profile)))
-
-
 ;(get-current-user)
 
 (def lock-visible? (cell false))
@@ -61,12 +50,12 @@
 (defn js-show-lock []
   (.show lock
          (clj->js
-           {:authParams        {:scope  "openid app_metadata"
-                                :device "dev1"}
-            :popup             true
-            :sso               false
-            :rememberLastLogin false
-            :closable          true})
+           {:authParams          {:scope  "openid app_metadata"
+                                  :device "dev1"}
+            :popup               true
+            :sso                 true
+            :rememberLastLogin   false
+            :closable            true})
          (fn [err user-profile jwt-id-token]
            (remember-id-token jwt-id-token)
            (reset-user-profile! user-profile))))
@@ -74,16 +63,16 @@
 (defn js-hide-lock []
   (.hide lock))
 
-(with-init!
-  (-> #(cell= (if lock-visible?
-                (js-show-lock)
-                (js-hide-lock)))
-      (timeout 200)                                         ; avoid FOUC
-      ))
-
-(with-init!
-  (cell= (when (nil? id-token)
-           (show-lock!))))
+;(with-init!
+;  (-> #(cell= (if lock-visible?
+;                (js-show-lock)
+;                (js-hide-lock)))
+;      (timeout 200)                                         ; avoid FOUC
+;      ))
+;
+;(with-init!
+;  (cell= (when (nil? id-token)
+;           (show-lock!))))
 
 
 ; Show login screen when for example the get-current-user RPC call
@@ -114,7 +103,7 @@
             (div :toggle authenticated?
                  (button :class "pure-button"
                          :click #(do (forget-id-token)
-                                     (reset! user-profile nil)
+                                     (reset-user-profile! nil)
                                      (reset! current-user :unknown))
                          "Log out")
 

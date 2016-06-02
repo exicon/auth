@@ -23,6 +23,8 @@
 (defn reset-user-profile! [js-profile]
   (reset! user-profile (as-clj js-profile)))
 
+(defn url-encode [s] (-> s str js/encodeURIComponent))
+
 (defn auth0-login-url [config]
   (when-let [{:keys [auth0-url auth0-client-id auth0-redirect-uri]} config]
     (str auth0-url "/authorize/"
@@ -30,8 +32,11 @@
          "&client_id=" auth0-client-id
          "&redirect_uri=" auth0-redirect-uri
          "&state="
-         "&scope=openid"
-         "&device=dev1")))
+         "&scope=openid profile"
+         ;"&connection=Username-Password-Authentication"
+         ;"&prompt=consent"
+         "&device=dev1"
+         )))
 
 (def authenticated?
   "It means we have an id-token, which we either successfully got,
@@ -93,6 +98,8 @@
          (h3 "JWT decoded by Auth0 Lock")
          (pre (cell= (pp-str (parse-hash lock route)))))
 
+    #_(div
+      (pre (cell= (pp-str id-token))))
     (div :toggle user-profile
          (h2 "Current user")
          (auth/user-elem :profile user-profile)

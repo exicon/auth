@@ -33,7 +33,7 @@
   (pre :toggle error
        :css {:background-color "blue"
              :color            "lightblue"}
-       (cell= (some-> error :stack))))
+       (cell= (some-> error .-serverStack))))
 
 (def lock (js/Auth0Lock.
             (env :auth0-client-id)
@@ -67,18 +67,17 @@
   (- (:exp claim) now))
 
 (defn schedule-id-token-renewal [in-seconds]
-  (js/setTimeout #(renew-id-token)
-                 (* 1000 in-seconds)))
+  (js/setTimeout #(renew-id-token) (* 1000 in-seconds)))
 
 ; Start automatic token renewal
 (cell=
-  (when id-token
+  (when id-token                                            ; every time the id-token changes
     (let [time-left (session-time-left claim (now*))
-         renew-before 5
-         renewable? (fn [t] (< renew-before t))]
-     (if (renewable? time-left)
-       (schedule-id-token-renewal (- time-left renew-before))
-       (forget-id-token)))))
+          renew-before 5
+          renewable? (fn [t] (< renew-before t))]
+      (if (renewable? time-left)
+        (schedule-id-token-renewal (- time-left renew-before))
+        (forget-id-token)))))
 
 (defn ajax-fn
   "Ajax request implementation using the standard jQuery ajax machinery."
@@ -126,7 +125,7 @@
   (let [now (cell (now*))]
     (js/setInterval #(reset! now (now*)) 1000)
     (span (cell=
-           (str "(Will be logged out " (session-time-left claim now) "s)")))))
+            (str "(Will be logged out " (session-time-left claim now) "s)")))))
 
 (defelem user-elem [{:keys [profile]} _]
   (cell-let

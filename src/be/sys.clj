@@ -1,7 +1,7 @@
 (ns sys
   (:require
     [auth.core]
-    [reloaded.repl :refer [system init start stop go reset]]
+    [system.repl :refer [system init start stop go reset]]
     [com.stuartsierra.component :as component]
     (system.components
       [jetty :refer [new-web-server]]
